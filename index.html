@@ -1,1 +1,503 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولد المقالات الإخباري المتكامل</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تحميل Font Awesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* خط Inter هو الخط الافتراضي المستخدم من Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; /* لون خلفية فاتح */
+        }
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
 
+    <!-- شريط الإعدادات الجانبي العائم (Sidebar) -->
+    <div id="settings-sidebar" class="sidebar hidden fixed top-0 right-0 h-full w-full sm:w-80 bg-white shadow-2xl z-50 p-6 border-l border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-cog text-indigo-500"></i> الإعدادات</h2>
+            <button onclick="toggleSettings()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- رسالة الخطأ العامة للإعدادات -->
+        <div id="settings-error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <p class="font-bold">خطأ في الإعدادات</p>
+            <p id="settings-error-text" class="text-sm"></p>
+        </div>
+
+        <div class="space-y-6">
+            <!-- إعدادات Gemini API -->
+            <div>
+                <h3 class="text-lg font-semibold text-indigo-600 border-b pb-2 mb-3">مفتاح Gemini API</h3>
+                <label for="geminiApiKey" class="block text-sm font-medium text-gray-700 mb-1">المفتاح السري (API Key)</label>
+                <input type="password" id="geminiApiKey" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="ضع مفتاحك هنا">
+                <p class="mt-1 text-xs text-gray-500">مطلوب لتوليد المقالات المدعومة بالبحث.</p>
+            </div>
+
+            <!-- إعدادات WordPress API -->
+            <div>
+                <h3 class="text-lg font-semibold text-indigo-600 border-b pb-2 mb-3">إعدادات ترحيل ووردبريس</h3>
+                <label for="wpUrl" class="block text-sm font-medium text-gray-700 mb-1">رابط الموقع (مثال: https://domain.com)</label>
+                <input type="url" id="wpUrl" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="https://yourdomain.com">
+
+                <label for="wpUsername" class="block text-sm font-medium text-gray-700 mt-3 mb-1">اسم المستخدم</label>
+                <input type="text" id="wpUsername" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="اسم المستخدم">
+
+                <label for="wpAppPassword" class="block text-sm font-medium text-gray-700 mt-3 mb-1">كلمة مرور التطبيق (Application Password)</label>
+                <input type="password" id="wpAppPassword" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="كلمة مرور التطبيق">
+                <p class="mt-1 text-xs text-gray-500">يجب استخدام كلمة مرور التطبيق وليس كلمة مرور تسجيل الدخول العادية.</p>
+            </div>
+
+            <!-- زر الحفظ -->
+            <button onclick="saveSettings()" class="w-full bg-green-500 text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition duration-150">
+                <i class="fas fa-save"></i> حفظ الإعدادات
+            </button>
+        </div>
+    </div>
+    
+    <!-- زر فتح الإعدادات العائم -->
+    <div class="fixed bottom-4 left-4 z-50">
+        <div class="flex flex-col space-y-2">
+             <!-- زر الإعدادات -->
+            <button onclick="toggleSettings()" class="bg-indigo-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-indigo-600 transition duration-300 flex items-center justify-center" title="الإعدادات">
+                <i class="fas fa-cog text-xl"></i>
+            </button>
+            <!-- زر حالة الخدمة -->
+            <button onclick="showStatus()" class="bg-blue-500 text-white w-12 h-12 rounded-full shadow-lg hover:bg-blue-600 transition duration-300 flex items-center justify-center" title="حالة الخدمات">
+                <i class="fas fa-list-ul text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-8 text-center">مُولّد المقالات الإخباري بالذكاء الاصطناعي</h1>
+        
+        <!-- قسم الإدخال والتحكم -->
+        <section class="bg-white p-6 rounded-xl shadow-lg mb-8 border border-indigo-200">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">تفاصيل المقال</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- العنوان الرئيسي للخبر -->
+                <div>
+                    <label for="articleTitle" class="block text-sm font-medium text-gray-700 mb-1">عنوان الخبر (الذي سيتم البحث عنه)</label>
+                    <input type="text" id="articleTitle" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" placeholder="مثال: آخر التطورات في سوق السيارات الكهربائية">
+                </div>
+
+                <!-- نوع المقال -->
+                <div>
+                    <label for="articleType" class="block text-sm font-medium text-gray-700 mb-1">نوع المقال</label>
+                    <select id="articleType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 bg-white transition duration-150">
+                        <option value="إخباري">مقال إخباري مجرد</option>
+                        <option value="تحليلي">مقال تحليلي معمق</option>
+                        <option value="رأي">مقال رأي شخصي</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- الكلمة المفتاحية المُعمَّقة (H2) -->
+            <div class="mt-4">
+                <label for="deepKeyword" class="block text-sm font-medium text-gray-700 mb-1">الكلمة المفتاحية المُعمَّقة (ستصبح عنوان H2)</label>
+                <input type="text" id="deepKeyword" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" placeholder="مثال: تأثير التكنولوجيا الجديدة">
+                <p class="mt-1 text-xs text-gray-500">هذه الكلمة ستُدرج كعنوان فرعي (H2) في بداية محتوى المسودة.</p>
+            </div>
+
+            <!-- زر التوليد -->
+            <button id="generateButton" onclick="generateArticle()" class="w-full mt-6 bg-indigo-600 text-white p-3 rounded-lg font-semibold text-lg hover:bg-indigo-700 transition duration-300 shadow-md">
+                <i class="fas fa-magic"></i> توليد المقال (مدعوم بالبحث)
+            </button>
+        </section>
+
+        <!-- حالة التحميل والرسائل -->
+        <div id="loadingIndicator" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded mb-6" role="alert">
+            <p class="font-bold">جاري العمل...</p>
+            <p id="loading-text">جاري البحث في جوجل وتوليد المحتوى. قد يستغرق الأمر بضع ثوانٍ.</p>
+        </div>
+
+        <div id="errorMessage" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6" role="alert">
+            <p class="font-bold">حدث خطأ!</p>
+            <p id="error-text"></p>
+        </div>
+
+        <!-- قسم الإخراج والتحرير -->
+        <section class="bg-white p-6 rounded-xl shadow-lg border border-green-200">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-2xl font-semibold text-gray-800">المقال المُولَّد والمُحرَّر</h2>
+                <span id="wordCount" class="text-sm font-medium text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full">الكلمات: 0</span>
+            </div>
+
+            <!-- منطقة التحرير -->
+            <textarea id="articleContent" oninput="updateWordCount()" rows="15" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-gray-800 resize-y transition duration-150" placeholder="سيظهر المقال المُولَّد هنا."></textarea>
+
+            <!-- معلومات الحقوق -->
+            <p class="mt-3 text-sm text-gray-500 border-t pt-2">
+                <i class="fas fa-fingerprint"></i> هذا المقال تم توليده بواسطة نموذج Gemini وراجعه المحرر.
+            </p>
+
+            <!-- أزرار الإجراءات النهائية -->
+            <div class="mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 sm:space-x-reverse">
+                <button onclick="copyArticle()" class="flex-1 bg-gray-500 text-white p-3 rounded-lg font-semibold hover:bg-gray-600 transition duration-150">
+                    <i class="fas fa-copy"></i> نسخ المقال
+                </button>
+                <button id="postButton" onclick="postDraftToWordPress()" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-150">
+                    <i class="fas fa-file-upload"></i> ترحيل المسودة إلى ووردبريس
+                </button>
+            </div>
+             <!-- حالة ترحيل ووردبريس -->
+            <div id="postStatus" class="mt-4 hidden p-3 rounded-lg font-medium"></div>
+        </section>
+
+         <!-- حالة الخدمات (Modal) -->
+        <div id="status-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-[100]">
+            <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm mx-4">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">حالة الخدمات</h3>
+                <div id="status-content" class="space-y-3">
+                    <p class="flex justify-between items-center">
+                        <span class="font-medium text-gray-700">Gemini API:</span>
+                        <span id="gemini-status" class="px-2 py-0.5 rounded-full text-xs font-semibold">جاري التحقق...</span>
+                    </p>
+                    <p class="flex justify-between items-center">
+                        <span class="font-medium text-gray-700">WordPress API:</span>
+                        <span id="wp-status" class="px-2 py-0.5 rounded-full text-xs font-semibold">جاري التحقق...</span>
+                    </p>
+                </div>
+                <button onclick="hideStatus()" class="mt-6 w-full bg-red-500 text-white p-2 rounded-lg hover:bg-red-600">إغلاق</button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // المتغيرات الثابتة لـ API
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
+        const WORDPRESS_POST_URL_SUFFIX = '/wp-json/wp/v2/posts';
+
+        // ----------------------------------------------------------------
+        // 1. منطق الإعدادات (Settings & LocalStorage)
+        // ----------------------------------------------------------------
+
+        document.addEventListener('DOMContentLoaded', loadSettings);
+
+        function loadSettings() {
+            document.getElementById('geminiApiKey').value = localStorage.getItem('geminiApiKey') || '';
+            document.getElementById('wpUrl').value = localStorage.getItem('wpUrl') || '';
+            document.getElementById('wpUsername').value = localStorage.getItem('wpUsername') || '';
+            // لا يتم تحميل كلمة المرور التطبيق لأسباب أمنية، لكن يمكن تخيل تحميلها
+        }
+
+        function saveSettings() {
+            const geminiApiKey = document.getElementById('geminiApiKey').value;
+            const wpUrl = document.getElementById('wpUrl').value;
+            const wpUsername = document.getElementById('wpUsername').value;
+            const wpAppPassword = document.getElementById('wpAppPassword').value;
+
+            if (!geminiApiKey) {
+                 showSettingsError("يرجى إدخال مفتاح Gemini API.");
+                 return;
+            }
+            if (wpUrl && (!wpUsername || !wpAppPassword)) {
+                 showSettingsError("إذا أدخلت رابط الموقع، فيجب إدخال اسم المستخدم وكلمة مرور التطبيق.");
+                 return;
+            }
+            if (wpUrl && !wpUrl.startsWith('http')) {
+                 showSettingsError("رابط الموقع يجب أن يبدأ بـ http:// أو https://");
+                 return;
+            }
+
+            localStorage.setItem('geminiApiKey', geminiApiKey);
+            localStorage.setItem('wpUrl', wpUrl);
+            localStorage.setItem('wpUsername', wpUsername);
+            localStorage.setItem('wpAppPassword', wpAppPassword); // تخزين كلمة المرور التطبيق بشكل غير آمن لكن لأغراض العرض
+
+            hideSettingsError();
+            alert("تم حفظ الإعدادات بنجاح.");
+            toggleSettings();
+        }
+        
+        function toggleSettings() {
+            document.getElementById('settings-sidebar').classList.toggle('hidden');
+        }
+
+        function showSettingsError(text) {
+            document.getElementById('settings-error-text').innerText = text;
+            document.getElementById('settings-error-message').classList.remove('hidden');
+        }
+
+        function hideSettingsError() {
+            document.getElementById('settings-error-message').classList.add('hidden');
+        }
+        // ----------------------------------------------------------------
+        // 2. منطق حالة الخدمات (Status Check)
+        // ----------------------------------------------------------------
+        
+        function showStatus() {
+            document.getElementById('status-modal').classList.remove('hidden');
+            document.getElementById('status-modal').classList.add('flex');
+            
+            checkGeminiStatus();
+            checkWpStatus();
+        }
+
+        function hideStatus() {
+            document.getElementById('status-modal').classList.remove('flex');
+            document.getElementById('status-modal').classList.add('hidden');
+        }
+
+        function setStatus(elementId, statusText, colorClass) {
+            const statusElement = document.getElementById(elementId);
+            statusElement.textContent = statusText;
+            statusElement.className = `px-2 py-0.5 rounded-full text-xs font-semibold ${colorClass}`;
+        }
+        
+        // التحقق من حالة Gemini API (بمجرد وجود المفتاح يعتبر متوفراً)
+        function checkGeminiStatus() {
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if (apiKey) {
+                setStatus('gemini-status', 'متوفر (المفتاح موجود)', 'bg-green-100 text-green-700');
+            } else {
+                setStatus('gemini-status', 'غير متوفر (المفتاح مفقود)', 'bg-red-100 text-red-700');
+            }
+        }
+
+        // التحقق من حالة WordPress (محاولة الاتصال بالصفحة الرئيسية لـ REST API)
+        async function checkWpStatus() {
+            const wpUrl = localStorage.getItem('wpUrl');
+            const wpUsername = localStorage.getItem('wpUsername');
+            const wpAppPassword = localStorage.getItem('wpAppPassword');
+            
+            if (!wpUrl || !wpUsername || !wpAppPassword) {
+                 setStatus('wp-status', 'غير مُهيأ (الإعدادات ناقصة)', 'bg-yellow-100 text-yellow-700');
+                 return;
+            }
+            
+            // استخدام endpoint سهل مثل /wp-json/
+            const testUrl = wpUrl.replace(/\/$/, "") + '/wp-json/'; 
+            
+            try {
+                // محاولة Fetch بسيطة للتحقق من الاتصال
+                const response = await fetch(testUrl, { method: 'GET', headers: { 'Accept': 'application/json' } });
+                
+                if (response.ok) {
+                    setStatus('wp-status', 'جاهز للنشر', 'bg-green-100 text-green-700');
+                } else {
+                    setStatus('wp-status', `فشل الاتصال: ${response.status}`, 'bg-red-100 text-red-700');
+                }
+            } catch (error) {
+                setStatus('wp-status', 'خطأ في الشبكة/الرابط', 'bg-red-100 text-red-700');
+                console.error('WordPress Status Check Error:', error);
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // 3. منطق توليد المقال (Gemini API Call)
+        // ----------------------------------------------------------------
+
+        // عداد الكلمات
+        function updateWordCount() {
+            const content = document.getElementById('articleContent').value.trim();
+            const count = content === "" ? 0 : content.split(/\s+/).length;
+            document.getElementById('wordCount').innerText = `الكلمات: ${count}`;
+        }
+
+        // إظهار رسالة خطأ في الواجهة الرئيسية
+        function showMainError(text) {
+            document.getElementById('error-text').innerText = text;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        // إخفاء رسالة الخطأ في الواجهة الرئيسية
+        function hideMainError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        // تشغيل/إيقاف مؤشر التحميل والأزرار
+        function toggleLoading(isLoading, text = "جاري البحث والتوليد...") {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const generateButton = document.getElementById('generateButton');
+            
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+                document.getElementById('loading-text').innerText = text;
+                generateButton.disabled = true;
+                generateButton.classList.add('opacity-50', 'cursor-not-allowed');
+                generateButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${text}`;
+            } else {
+                loadingIndicator.classList.add('hidden');
+                generateButton.disabled = false;
+                generateButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                generateButton.innerHTML = `<i class="fas fa-magic"></i> توليد المقال (مدعوم بالبحث)`;
+            }
+        }
+
+        async function generateArticle() {
+            hideMainError();
+            document.getElementById('articleContent').value = '';
+            updateWordCount();
+
+            const apiKey = localStorage.getItem('geminiApiKey');
+            const title = document.getElementById('articleTitle').value.trim();
+            const type = document.getElementById('articleType').value;
+            const deepKeyword = document.getElementById('deepKeyword').value.trim();
+
+            if (!apiKey || !title || !type || !deepKeyword) {
+                showMainError("يرجى التأكد من إدخال مفتاح Gemini API وعنوان الخبر ونوع المقال والكلمة المفتاحية المُعمَّقة.");
+                return;
+            }
+
+            toggleLoading(true, "جاري البحث في جوجل وتوليد المحتوى...");
+
+            const systemPrompt = `أنت محرر أخبار عربي محترف. مهمتك هي كتابة مقال باللغة العربية بناءً على البحث الذي تجريه. يجب أن يكون المقال من 300 إلى 400 كلمة. يجب أن يتضمن المقال مقدمة وفقرات تفصيلية وخاتمة. يجب أن يكون نمط المقال: ${type}. يجب أن تكون اللغة احترافية ومقنعة.`;
+            const userQuery = `اكتب مقال إخباري بعنوان: "${title}". يجب أن يتضمن المقال معلومات مفصلة حول "${deepKeyword}". اجعل تنسيق الفقرات احترافياً ومناسباً للويب.`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const response = await fetch(API_URL + apiKey, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorJson = await response.json();
+                    showMainError(`خطأ في API: ${errorJson.error?.message || response.statusText}`);
+                    return;
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (text) {
+                    const finalContent = text + "\n\n" + 
+                                         "---" + "\n" +
+                                         "**حقوق النشر:** تم توليد هذا المحتوى بواسطة نموذج Gemini وتمت مراجعته وتدقيقه لغويًا من قبل المحررين المختصين.";
+                                         
+                    document.getElementById('articleContent').value = finalContent;
+                    updateWordCount();
+                } else {
+                    showMainError("لم يتمكن النموذج من توليد محتوى. قد يكون البحث غير واضح أو هناك خطأ في المعالجة.");
+                }
+
+            } catch (error) {
+                console.error('Generation Error:', error);
+                showMainError(`حدث خطأ غير متوقع أثناء الاتصال بالخادم. تحقق من اتصالك بالإنترنت.`);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // 4. منطق الإجراءات النهائية (Copy & WordPress Post)
+        // ----------------------------------------------------------------
+        
+        // نسخ المقال
+        function copyArticle() {
+            const content = document.getElementById('articleContent');
+            content.select();
+            document.execCommand('copy');
+            alert("تم نسخ المقال إلى الحافظة!");
+        }
+
+        // ترحيل المسودة إلى ووردبريس
+        async function postDraftToWordPress() {
+            const wpUrl = localStorage.getItem('wpUrl');
+            const wpUsername = localStorage.getItem('wpUsername');
+            const wpAppPassword = localStorage.getItem('wpAppPassword');
+
+            const title = document.getElementById('articleTitle').value.trim();
+            const content = document.getElementById('articleContent').value.trim();
+            const deepKeyword = document.getElementById('deepKeyword').value.trim();
+
+            const postStatus = document.getElementById('postStatus');
+            postStatus.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            postStatus.textContent = 'جاري الترحيل...';
+            postStatus.classList.add('bg-yellow-100', 'text-yellow-700');
+            
+            // تحقق من الإعدادات والمحتوى
+            if (!wpUrl || !wpUsername || !wpAppPassword) {
+                postStatus.textContent = 'فشل: إعدادات ووردبريس ناقصة. يرجى مراجعة لوحة الإعدادات.';
+                postStatus.classList.replace('bg-yellow-100', 'bg-red-100');
+                postStatus.classList.replace('text-yellow-700', 'text-red-700');
+                return;
+            }
+            if (!title || !content) {
+                postStatus.textContent = 'فشل: يرجى توليد محتوى المقال وإدخال العنوان أولاً.';
+                postStatus.classList.replace('bg-yellow-100', 'bg-red-100');
+                postStatus.classList.replace('text-yellow-700', 'text-red-700');
+                return;
+            }
+
+            // تجهيز المحتوى: إضافة الكلمة المفتاحية كعنوان H2 وتنسيق النص
+            const formattedKeyword = `<h2 dir="rtl">${deepKeyword}</h2>\n\n`;
+            
+            // استبدال أسطر Markdown بـ <p> لترميز HTML
+            const htmlContent = formattedKeyword + content
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0) // إزالة الأسطر الفارغة
+                .map(line => `<p dir="rtl">${line}</p>`)
+                .join('\n');
+            
+            // إنشاء الـ Basic Auth Header
+            const credentials = btoa(`${wpUsername}:${wpAppPassword}`);
+            const authHeader = `Basic ${credentials}`;
+            const targetUrl = wpUrl.replace(/\/$/, "") + WORDPRESS_POST_URL_SUFFIX;
+
+            const postData = {
+                title: title,
+                content: htmlContent,
+                status: 'draft' // نشر كمسودة
+            };
+
+            try {
+                const response = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authHeader
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    postStatus.innerHTML = `نجاح! تم ترحيل المسودة بنجاح. <a href="${data.link}" target="_blank" class="text-green-800 underline hover:text-green-900">رابط المسودة</a>.`;
+                    postStatus.classList.replace('bg-yellow-100', 'bg-green-100');
+                    postStatus.classList.replace('text-yellow-700', 'text-green-700');
+                } else {
+                    const errorData = await response.json();
+                    postStatus.textContent = `فشل الترحيل: ${response.status} - ${errorData.message || 'خطأ في المصادقة أو الخادم'}.`;
+                    postStatus.classList.replace('bg-yellow-100', 'bg-red-100');
+                    postStatus.classList.replace('text-yellow-700', 'text-red-700');
+                }
+
+            } catch (error) {
+                console.error('WordPress Post Error:', error);
+                postStatus.textContent = `فشل الاتصال: تأكد من أن رابط الموقع صحيح وأن API REST مفعل.`;
+                postStatus.classList.replace('bg-yellow-100', 'bg-red-100');
+                postStatus.classList.replace('text-yellow-700', 'text-red-700');
+            }
+        }
+    </script>
+</body>
+</html>
