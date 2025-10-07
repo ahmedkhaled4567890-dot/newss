@@ -15,11 +15,11 @@
         .container {
             max-width: 900px;
         }
-        /* تنسيقات الشريط الجانبي الرئيسي (الأدوات) - يظهر من اليمين لليسار */
+        /* تنسيقات الشريط الجانبي الرئيسي (الأدوات) */
         .main-sidebar {
             transition: transform 0.3s ease-in-out;
-            z-index: 60; /* أعلى من شريط الإعدادات */
-            transform: translateX(100%); /* مخفي على اليمين */
+            z-index: 60;
+            transform: translateX(100%);
         }
         .main-sidebar.active {
             transform: translateX(0);
@@ -28,7 +28,7 @@
         .settings-sidebar {
             transition: transform 0.3s ease-in-out;
             z-index: 50; 
-            transform: translateX(100%); /* مخفي على اليمين */
+            transform: translateX(100%);
         }
         .settings-sidebar.active {
             transform: translateX(0);
@@ -236,9 +236,15 @@
 
                 <div class="flex mb-4 gap-2">
                     <input type="url" id="articleLinkInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="الصق رابط المقال الذي تريد صياغته (URL)">
+                    
+                    <button id="fetchOnlyBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-150">
+                        جلب فقط
+                    </button>
+
                     <button id="fetchAndRewriteBtn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-150">
                         جلب وصياغة
                     </button>
+
                 </div>
                 
                 <div id="paraphraseStatus" class="text-sm text-gray-600"></div>
@@ -258,8 +264,6 @@
         //  الإعدادات الثابتة
         // ====================================================================
         const API_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=`;
-
-        // **هام:** تم تحديث هذا إلى نقطة نهاية الـ Backend Proxy الخاصة بك على Vercel
         const PROXY_API_URL = 'https://newss-rosy.vercel.app/api/rewrite'; 
         
         // **الإعدادات الأمنية لتسجيل الدخول (يجب تغييرها)**
@@ -278,15 +282,15 @@
         const loginPasswordInput = document.getElementById('login-password');
         const loginButton = document.getElementById('login-btn');
         const loginErrorMessage = document.getElementById('login-error-message');
-        const appContent = document.getElementById('app-content'); // محتوى التطبيق الرئيسي
-        const logoutButton = document.getElementById('logout-btn'); // زر الخروج الجديد
+        const appContent = document.getElementById('app-content');
+        const logoutButton = document.getElementById('logout-btn');
 
         // عناصر القائمة الرئيسية والأزرار
         const openMainSidebarBtn = document.getElementById('openMainSidebarBtn');
         const mainSidebar = document.getElementById('mainSidebar');
         const closeMainSidebarBtn = document.getElementById('closeMainSidebarBtn');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const openSettingsBtn = document.getElementById('openSettingsBtn'); // الزر داخل القائمة الرئيسية
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
 
         // عناصر شريط الإعدادات
         const settingsSidebar = document.getElementById('settingsSidebar'); 
@@ -314,6 +318,7 @@
 
         // عناصر أداة الصياغة
         const articleLinkInput = document.getElementById('articleLinkInput');
+        const fetchOnlyBtn = document.getElementById('fetchOnlyBtn'); // الزر الجديد
         const fetchAndRewriteBtn = document.getElementById('fetchAndRewriteBtn');
         const paraphraseStatus = document.getElementById('paraphraseStatus');
 
@@ -366,11 +371,10 @@
         }
 
         // ====================================================================
-        //  معالجة تسجيل الدخول (جديد)
+        //  معالجة تسجيل الدخول 
         // ====================================================================
         
         function checkAccess() {
-            // التحقق من وجود رمز مرور في localStorage (للتذكر بين الجلسات)
             const token = localStorage.getItem(ACCESS_TOKEN_KEY);
             if (token === 'granted') {
                 showApp();
@@ -394,11 +398,11 @@
             const password = loginPasswordInput.value.trim();
 
             if (username === REQUIRED_USERNAME && password === REQUIRED_PASSWORD) {
-                localStorage.setItem(ACCESS_TOKEN_KEY, 'granted'); // حفظ الرمز
+                localStorage.setItem(ACCESS_TOKEN_KEY, 'granted');
                 showApp();
             } else {
                 loginErrorMessage.classList.remove('hidden');
-                loginPasswordInput.value = ''; // مسح كلمة المرور
+                loginPasswordInput.value = '';
             }
         }
         
@@ -416,11 +420,11 @@
         logoutButton.addEventListener('click', () => {
             localStorage.removeItem(ACCESS_TOKEN_KEY);
             showLogin();
-            closeSidebars(); // إغلاق أي أشرطة جانبية مفتوحة
+            closeSidebars();
         });
 
         // ====================================================================
-        //  معالجة إعدادات الأشرطة الجانبية (تم إصلاح تداخل القوائم هنا)
+        //  معالجة إعدادات الأشرطة الجانبية
         // ====================================================================
         
         openMainSidebarBtn.addEventListener('click', () => {
@@ -437,7 +441,7 @@
         closeMainSidebarBtn.addEventListener('click', closeSidebars);
         sidebarOverlay.addEventListener('click', closeSidebars);
         
-        // **الإصلاح:** إغلاق القائمة الرئيسية قبل فتح الإعدادات
+        // الإصلاح: إغلاق القائمة الرئيسية قبل فتح الإعدادات
         openSettingsBtn.addEventListener('click', () => {
             mainSidebar.classList.remove('active'); 
             sidebarOverlay.classList.add('hidden'); 
@@ -581,7 +585,7 @@
 
         // وظيفة عرض الكلمات المفتاحية
         function renderKeywords() {
-            keywordsList.innerHTML = ''; // تفريغ القائمة
+            keywordsList.innerHTML = '';
             settings.keywords.forEach((keyword, index) => {
                 const listItem = document.createElement('li');
                 listItem.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200';
@@ -616,8 +620,8 @@
             // زر توليد مقال سريع
             if (event.target.classList.contains('generate-quick-btn')) {
                 const keyword = event.target.getAttribute('data-keyword');
-                postTitleInput.value = keyword; // نسخ الكلمة للعنوان
-                newsContentInput.value = `أريد مقالاً مفصلاً عن الكلمة المفتاحية: ${keyword}`; // وضع برومبت أساسي في المحتوى
+                postTitleInput.value = keyword;
+                newsContentInput.value = `أريد مقالاً مفصلاً عن الكلمة المفتاحية: ${keyword}`;
                 showStatus('جاهز للتوليد', `تم نسخ الكلمة المفتاحية **"${keyword}"** لحقل العنوان والمحتوى. اضغط على **"توليد المقال"** في الأعلى.`, 'info');
                 document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
             }
@@ -638,25 +642,33 @@
         // ====================================================================
         //  وظيفة أداة جلب المقالات وإعادة الصياغة (Backend Proxy)
         // ====================================================================
-
-        fetchAndRewriteBtn.addEventListener('click', async () => {
+        
+        // وظيفة الجلب الأساسية (ستستخدم من قبل الزرين)
+        async function handleArticleFetch(sendApiKey) {
             const articleUrl = articleLinkInput.value.trim();
+            
             if (!articleUrl) {
                 paraphraseStatus.innerHTML = '<span class="text-red-600">الرجاء إدخال رابط مقال صالح.</span>';
                 return;
             }
-
-            if (!settings.geminiApiKey) {
-                paraphraseStatus.innerHTML = '<span class="text-red-600 font-bold">عذراً!</span> يرجى إدخال مفتاح Gemini API في شريط الإعدادات أولاً.';
+            
+            if (sendApiKey && !settings.geminiApiKey) {
+                paraphraseStatus.innerHTML = '<span class="text-red-600 font-bold">عذراً!</span> يرجى إدخال مفتاح Gemini API في شريط الإعدادات أولاً لإجراء الصياغة.';
                 return;
             }
+
+            const buttonToUpdate = sendApiKey ? fetchAndRewriteBtn : fetchOnlyBtn;
+            const originalButtonText = buttonToUpdate.innerHTML;
+            
+            // تحديث حالة زر التحميل
+            buttonToUpdate.innerHTML = `<svg class="animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            جاري العمل...`;
             
             paraphraseStatus.innerHTML = `<span class="text-indigo-600 flex items-center">
-                <svg class="animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                جاري جلب المحتوى وإعادة صياغته عبر خادم Vercel...
+                جاري جلب المحتوى ${sendApiKey ? 'وإعادة صياغته' : 'فقط'} عبر خادم Vercel...
             </span>`;
             
             try {
@@ -664,17 +676,32 @@
                 const backendResponse = await fetch(PROXY_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: articleUrl, apiKey: settings.geminiApiKey })
+                    // نرسل المفتاح فقط إذا كان مطلوباً للصياغة
+                    body: JSON.stringify({ 
+                        url: articleUrl, 
+                        apiKey: sendApiKey ? settings.geminiApiKey : '' 
+                    })
                 });
                 
                 const data = await backendResponse.json();
 
                 if (backendResponse.ok) {
+                    // إذا كان المفتاح موجوداً سيأتي النص في rewrittenText، وإلا سيأتي في content
+                    const resultContent = data.rewrittenText || data.content;
                     
-                    // افتراض أن الـ Backend يعيد النص المُعاد صياغته في حقل rewrittenText
-                    newsContentInput.value = data.rewrittenText || 'فشل في الحصول على النص المُعاد صياغته من الخادم.';
-                    paraphraseStatus.innerHTML = '<span class="text-green-600 font-bold">تمت إعادة الصياغة بنجاح!</span> تم وضع المحتوى الجديد في مربع "المحتوى/الملخص".';
-                    document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
+                    if (resultContent) {
+                        newsContentInput.value = resultContent;
+                        
+                        // تحديث حالة العنوان إذا تم جلبه
+                        if (data.title && !postTitleInput.value.trim()) {
+                            postTitleInput.value = data.title;
+                        }
+
+                        paraphraseStatus.innerHTML = `<span class="text-green-600 font-bold">تمت العملية بنجاح!</span> تم وضع المحتوى في مربع "المحتوى/الملخص".`;
+                        document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                         paraphraseStatus.innerHTML = '<span class="text-red-600">فشل في الحصول على محتوى صالح. قد يكون الخادم الخارجي قد منع الوصول أو أن Gemini لم ينتج نصًا.</span>';
+                    }
                 } else {
                     // عرض رسالة الخطأ القادمة من الواجهة الخلفية (Backend)
                     throw new Error(data.error || "خطأ غير معروف في الاتصال بالواجهة الخلفية (Backend).");
@@ -682,9 +709,15 @@
                 
             } catch(e) {
                  paraphraseStatus.innerHTML = `<span class="text-red-600">فشل العملية: ${e.message}</span>`;
+            } finally {
+                buttonToUpdate.innerHTML = originalButtonText;
             }
+        }
 
-        });
+        // 3. ربط الدالة بالزرين
+        fetchOnlyBtn.addEventListener('click', () => handleArticleFetch(false)); // لا ترسل المفتاح = جلب فقط
+        fetchAndRewriteBtn.addEventListener('click', () => handleArticleFetch(true)); // أرسل المفتاح = جلب وصياغة
+        
         
         // ====================================================================
         //  وظيفة النشر إلى ووردبريس (WordPress Post)
