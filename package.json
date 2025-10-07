@@ -1,6 +1,7 @@
 {
   "name": "news-aggregator-proxy",
   "version": "1.0.0",
+  "type": "module",  
   "description": "Vercel proxy for fetching external content and using Gemini API.",
   "main": "api/rewrite.js",
   "scripts": {
