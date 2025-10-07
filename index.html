@@ -231,7 +231,7 @@
                 </h2>
 
                 <div class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-4 text-sm">
-                    *تم الربط!* هذه الميزة تعمل الآن عبر الواجهة الخلفية (Backend Proxy) على Vercel.
+                    **تم الربط!** هذه الميزة تعمل الآن عبر الواجهة الخلفية (Backend Proxy) على Vercel.
                 </div>
 
                 <div class="flex mb-4 gap-2">
@@ -253,7 +253,7 @@
         </div>
         
         <footer class="mt-8 py-4 text-center text-sm text-gray-500 bg-white border-t">
-            <p>&copy; 2024. جميع الحقوق محفوظة لـ *أحمد خالد*.</p>
+            <p>&copy; 2024. جميع الحقوق محفوظة لـ **أحمد خالد**.</p>
         </footer>
     </div>
 
@@ -263,12 +263,12 @@
         // ====================================================================
         //  الإعدادات الثابتة
         // ====================================================================
-        const API_BASE_URL = https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=;
+        const API_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=`;
         const PROXY_API_URL = 'https://newss-rosy.vercel.app/api/rewrite'; 
         
-        // *الإعدادات الأمنية لتسجيل الدخول (يجب تغييرها)*
+        // **الإعدادات الأمنية لتسجيل الدخول (يجب تغييرها)**
         const REQUIRED_USERNAME = 'admin';
-        const REQUIRED_PASSWORD = '1234567';
+        const REQUIRED_PASSWORD = '12345';
         const ACCESS_TOKEN_KEY = 'AppAccessGranted';
 
 
@@ -514,7 +514,7 @@
             
             // إضافة التعليمات المخصصة للبرومبت
             if (customInstruction) {
-                systemPrompt += \n\nتعليمات المستخدم الخاصة للأسلوب والنبرة: ${customInstruction};
+                systemPrompt += `\n\nتعليمات المستخدم الخاصة للأسلوب والنبرة: ${customInstruction}`;
             }
 
             const payload = {
@@ -542,10 +542,10 @@
                             break; 
                         } else {
                             if (response.status === 429 || response.status >= 500) {
-                                throw new Error(HTTP error with status ${response.status}. Retrying...);
+                                throw new Error(`HTTP error with status ${response.status}. Retrying...`);
                             } else {
                                 const errorData = await response.json();
-                                throw new Error(errorData.error?.message || HTTP error! status: ${response.status});
+                                throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
                             }
                         }
                     } catch (error) {
@@ -621,8 +621,8 @@
             if (event.target.classList.contains('generate-quick-btn')) {
                 const keyword = event.target.getAttribute('data-keyword');
                 postTitleInput.value = keyword;
-                newsContentInput.value = أريد مقالاً مفصلاً عن الكلمة المفتاحية: ${keyword};
-                showStatus('جاهز للتوليد', تم نسخ الكلمة المفتاحية **"${keyword}"** لحقل العنوان والمحتوى. اضغط على **"توليد المقال"** في الأعلى., 'info');
+                newsContentInput.value = `أريد مقالاً مفصلاً عن الكلمة المفتاحية: ${keyword}`;
+                showStatus('جاهز للتوليد', `تم نسخ الكلمة المفتاحية **"${keyword}"** لحقل العنوان والمحتوى. اضغط على **"توليد المقال"** في الأعلى.`, 'info');
                 document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
             }
             
@@ -697,7 +697,7 @@
                             postTitleInput.value = data.title;
                         }
 
-                        paraphraseStatus.innerHTML = <span class="text-green-600 font-bold">تمت العملية بنجاح!</span> تم وضع المحتوى في مربع "المحتوى/الملخص".;
+                        paraphraseStatus.innerHTML = `<span class="text-green-600 font-bold">تمت العملية بنجاح!</span> تم وضع المحتوى في مربع "المحتوى/الملخص".`;
                         document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
                     } else {
                          paraphraseStatus.innerHTML = '<span class="text-red-600">فشل في الحصول على محتوى صالح. قد يكون الخادم الخارجي قد منع الوصول أو أن Gemini لم ينتج نصًا.</span>';
@@ -708,7 +708,7 @@
                 }
                 
             } catch(e) {
-                 paraphraseStatus.innerHTML = <span class="text-red-600">فشل العملية: ${e.message}</span>;
+                 paraphraseStatus.innerHTML = `<span class="text-red-600">فشل العملية: ${e.message}</span>`;
             } finally {
                 buttonToUpdate.innerHTML = originalButtonText;
             }
@@ -735,13 +735,13 @@
             const content = newsContentInput.value.trim();
             
             if (!title || !content) {
-                showStatus('تنبيه', 'الرجاء التأكد من كتابة *عنوان المقال* و *محتوى المقال*.', 'warning');
+                showStatus('تنبيه', 'الرجاء التأكد من كتابة **عنوان المقال** و **محتوى المقال**.', 'warning');
                 return;
             }
 
             // 3. إعداد بيانات النشر
             const cleanUrl = settings.wpUrl.replace(/\/$/, ""); 
-            const targetUrl = ${cleanUrl}/wp-json/wp/v2/posts;
+            const targetUrl = `${cleanUrl}/wp-json/wp/v2/posts`;
             const authHeader = 'Basic ' + btoa(settings.wpUsername + ':' + settings.wpAppPassword);
             
             const postData = {
@@ -774,17 +774,17 @@
                     const result = await response.json();
                     const postLink = result.link;
                     
-                    showStatus('تم بنجاح!', تم ترحيل المقال كـ **مسودة** إلى ووردبريس. <a href="${postLink}" target="_blank" class="text-blue-700 underline font-bold hover:text-blue-500">مشاهدة المسودة</a>, 'success');
+                    showStatus('تم بنجاح!', `تم ترحيل المقال كـ **مسودة** إلى ووردبريس. <a href="${postLink}" target="_blank" class="text-blue-700 underline font-bold hover:text-blue-500">مشاهدة المسودة</a>`, 'success');
                     
                     wordpressPostButton.innerHTML = 'تم الترحيل!';
                     wordpressPostButton.classList.replace('bg-green-600', 'bg-blue-600');
                     
                 } else {
                     const errorData = await response.json();
-                    let msg = errorData.message || خطأ HTTP: ${response.status};
+                    let msg = errorData.message || `خطأ HTTP: ${response.status}`;
 
                     if (response.status === 401) {
-                         msg = 'فشل المصادقة: تأكد من أن *اسم المستخدم* و *كلمة مرور التطبيق* صحيحان، ومن تفعيل إذن النشر.';
+                         msg = 'فشل المصادقة: تأكد من أن **اسم المستخدم** و **كلمة مرور التطبيق** صحيحان، ومن تفعيل إذن النشر.';
                     } else if (response.status === 404) {
                          msg = 'خطأ 404: تأكد من أن رابط الموقع صحيح وأن الـ API متاح (wp-json/wp/v2/posts).';
                     }
@@ -812,7 +812,7 @@
             
             // ثانياً: عرض تنبيه API إذا كان التطبيق مفتوحاً والمفتاح غير موجود
             if (appContent.style.display !== 'none' && !settings.geminiApiKey) {
-                showStatus('تنبيه هام', 'الرجاء إدخال مفتاح Gemini API وحفظه في قسم *الإعدادات* لبدء استخدام المولد.', 'warning');
+                showStatus('تنبيه هام', 'الرجاء إدخال مفتاح Gemini API وحفظه في قسم **الإعدادات** لبدء استخدام المولد.', 'warning');
             }
         });
 
