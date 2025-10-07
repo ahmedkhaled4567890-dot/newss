@@ -720,7 +720,7 @@
         
         
         // ====================================================================
-        //  وظيفة النشر إلى ووردبريس (WordPress Post)
+        //  وظيفة النشر إلى ووردبريس (WordPress Post) - تم تعديلها لاستخدام الوسيط (Proxy)
         // ====================================================================
         
         wordpressPostButton.addEventListener('click', async () => {
@@ -740,11 +740,14 @@
             }
 
             // 3. إعداد بيانات النشر
-            const cleanUrl = settings.wpUrl.replace(/\/$/, ""); 
-            const targetUrl = `${cleanUrl}/wp-json/wp/v2/posts`;
-            const authHeader = 'Basic ' + btoa(settings.wpUsername + ':' + settings.wpAppPassword);
+            // **هذا هو المسار الجديد للوسيط (Proxy) على Vercel**
+            const proxyPath = '/api/wp-migrate'; 
             
-            const postData = {
+            // **نقوم بإرسال جميع البيانات (بما في ذلك الإعدادات) إلى الوسيط لمعالجتها في الخلفية**
+            const payload = {
+                url: settings.wpUrl, // رابط الموقع
+                username: settings.wpUsername, // اسم المستخدم
+                password: settings.wpAppPassword, // كلمة مرور التطبيق
                 title: title,
                 content: content,
                 status: 'draft' 
@@ -761,18 +764,20 @@
             hideStatus(); 
 
             try {
-                const response = await fetch(targetUrl, {
+                // **الاتصال الآن يتم بمسار الوسيط المحلي (proxyPath)**
+                const response = await fetch(proxyPath, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': authHeader
+                        'Content-Type': 'application/json'
+                        // **تمت إزالة Authorization Header من هنا**
                     },
-                    body: JSON.stringify(postData)
+                    body: JSON.stringify(payload)
                 });
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    const postLink = result.link;
+                const result = await response.json(); // الوسيط سيرجع النتيجة بصيغة { success: true/false, ... }
+                
+                if (result.success) { // التحقق من حقل success الذي يرجعه الوسيط
+                    const postLink = result.postUrl; // الوسيط يرجع postUrl
                     
                     showStatus('تم بنجاح!', `تم ترحيل المقال كـ **مسودة** إلى ووردبريس. <a href="${postLink}" target="_blank" class="text-blue-700 underline font-bold hover:text-blue-500">مشاهدة المسودة</a>`, 'success');
                     
@@ -780,21 +785,16 @@
                     wordpressPostButton.classList.replace('bg-green-600', 'bg-blue-600');
                     
                 } else {
-                    const errorData = await response.json();
-                    let msg = errorData.message || `خطأ HTTP: ${response.status}`;
-
-                    if (response.status === 401) {
-                         msg = 'فشل المصادقة: تأكد من أن **اسم المستخدم** و **كلمة مرور التطبيق** صحيحان، ومن تفعيل إذن النشر.';
-                    } else if (response.status === 404) {
-                         msg = 'خطأ 404: تأكد من أن رابط الموقع صحيح وأن الـ API متاح (wp-json/wp/v2/posts).';
-                    }
+                    // رسالة الخطأ تأتي مباشرة من الوسيط
+                    let msg = result.message || `خطأ غير معروف في الوسيط.`;
                     
                     showStatus('فشل الترحيل!', msg, 'error');
                 }
 
             } catch (e) {
-                console.error("Error posting to WordPress: ", e);
-                showStatus('فشل الترحيل!', 'حدث خطأ في الاتصال: تأكد من تشغيل الموقع وعدم وجود قيود CORS. ' + e.message, 'error');
+                console.error("Error posting to WordPress via Proxy: ", e);
+                // رسالة الخطأ في هذه الحالة تكون متعلقة باتصال المتصفح بالوسيط نفسه
+                showStatus('فشل الترحيل!', 'حدث خطأ في الاتصال بالخادم الوسيط. (تأكد من نشر ملف /api/wp-migrate.js). ' + e.message, 'error');
             } finally {
                 wordpressPostButton.innerHTML = originalButtonText;
                 wordpressPostButton.classList.replace('bg-blue-600', 'bg-green-600');
