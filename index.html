@@ -420,7 +420,7 @@
         });
 
         // ====================================================================
-        //  معالجة إعدادات الأشرطة الجانبية
+        //  معالجة إعدادات الأشرطة الجانبية (تم إصلاح تداخل القوائم هنا)
         // ====================================================================
         
         openMainSidebarBtn.addEventListener('click', () => {
@@ -437,7 +437,10 @@
         closeMainSidebarBtn.addEventListener('click', closeSidebars);
         sidebarOverlay.addEventListener('click', closeSidebars);
         
+        // **الإصلاح:** إغلاق القائمة الرئيسية قبل فتح الإعدادات
         openSettingsBtn.addEventListener('click', () => {
+            mainSidebar.classList.remove('active'); 
+            sidebarOverlay.classList.add('hidden'); 
             settingsSidebar.classList.add('active');
         });
 
@@ -782,4 +785,4 @@
 
     </script>
 </body>
-                        </html>
+</html>
