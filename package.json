@@ -1,0 +1,16 @@
+{
+  "name": "news-aggregator-proxy",
+  "version": "1.0.0",
+  "description": "Vercel proxy for fetching external content and using Gemini API.",
+  "main": "api/rewrite.js",
+  "scripts": {
+    "start": "echo 'Running client-side application...'"
+  },
+  "dependencies": {
+    "jsdom": "^24.1.0",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
