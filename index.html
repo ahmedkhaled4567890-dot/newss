@@ -190,7 +190,7 @@
             </h2>
 
             <div class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-4 text-sm">
-                **تنبيه مهم:** هذه الميزة تتطلب واجهة خلفية (Backend Proxy) لتجاوز قيود المتصفح (CORS). الكود هنا هو للواجهة الأمامية فقط.
+                **تم الربط!** هذه الميزة تعمل الآن عبر الواجهة الخلفية (Backend Proxy) على Vercel.
             </div>
 
             <div class="flex mb-4 gap-2">
@@ -217,8 +217,8 @@
         // ====================================================================
         const API_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=`;
 
-        // **هام:** يجب تغيير هذا إلى نقطة نهاية الـ Backend Proxy عند التنفيذ!
-        const PROXY_API_URL = 'YOUR_BACKEND_PROXY_URL_HERE'; 
+        // **هام:** تم تحديث هذا إلى نقطة نهاية الـ Backend Proxy الخاصة بك على Vercel
+        const PROXY_API_URL = 'https://newss-rosy.vercel.app/api/rewrite'; 
 
         // ====================================================================
         //  تعريف عناصر DOM الجديدة والمعدلة
@@ -264,14 +264,19 @@
         // ====================================================================
         //  حالة التطبيق (State) - يتم تحميلها من localStorage
         // ====================================================================
-        let settings = {
-            geminiApiKey: localStorage.getItem('geminiApiKey') || '',
-            wpUrl: localStorage.getItem('wpUrl') || '',
-            wpUsername: localStorage.getItem('wpUsername') || '',
-            wpAppPassword: localStorage.getItem('wpAppPassword') || '',
-            // إضافة قائمة الكلمات المفتاحية المحفوظة محلياً
-            keywords: JSON.parse(localStorage.getItem('keywordsList')) || []
-        };
+        
+        // وظيفة مساعدة لتحميل الإعدادات
+        function loadSettings() {
+            return {
+                geminiApiKey: localStorage.getItem('geminiApiKey') || '',
+                wpUrl: localStorage.getItem('wpUrl') || '',
+                wpUsername: localStorage.getItem('wpUsername') || '',
+                wpAppPassword: localStorage.getItem('wpAppPassword') || '',
+                keywords: JSON.parse(localStorage.getItem('keywordsList')) || []
+            };
+        }
+
+        let settings = loadSettings();
         
         // تعبئة حقول الإدخال بالبيانات المحفوظة
         geminiApiKeyInput.value = settings.geminiApiKey;
@@ -305,7 +310,7 @@
         }
 
         // ====================================================================
-        //  معالجة إعدادات الأشرطة الجانبية (جديد)
+        //  معالجة إعدادات الأشرطة الجانبية
         // ====================================================================
         
         // 1. فتح وإغلاق القائمة الرئيسية (الأدوات)
@@ -326,13 +331,10 @@
         // 2. فتح وإغلاق قائمة الإعدادات الفرعية
         openSettingsBtn.addEventListener('click', () => {
             settingsSidebar.classList.add('active');
-            // لا تغلق القائمة الرئيسية، فقط قم بإخفائها مؤقتاً
-            // mainSidebar.classList.remove('active'); 
         });
 
         closeSettingsSidebar.addEventListener('click', () => {
             settingsSidebar.classList.remove('active');
-            // يمكن إعادة إظهار القائمة الرئيسية هنا إذا رغبت
         });
 
 
@@ -355,7 +357,7 @@
 
 
         // ====================================================================
-        //  وظيفة توليد المحتوى بالذكاء الاصطناعي (Gemini) - تم تعديلها لإضافة البرومبت المخصص
+        //  وظيفة توليد المحتوى بالذكاء الاصطناعي (Gemini)
         // ====================================================================
         
         generateButton.addEventListener('click', async () => {
@@ -365,7 +367,7 @@
             }
             
             const userPrompt = newsContentInput.value.trim();
-            const customInstruction = customPromptInput.value.trim(); // **جديد: قراءة البرومبت المخصص**
+            const customInstruction = customPromptInput.value.trim();
 
             if (!userPrompt) {
                 showStatus('تنبيه', 'الرجاء كتابة مسودة أو ملخص في مربع المحتوى لتوليد مقال كامل.', 'warning');
@@ -395,7 +397,7 @@
                 5. يجب أن يتراوح طوله بين 250 و 350 كلمة.
             `;
             
-            // **تعديل: إضافة التعليمات المخصصة للبرومبت**
+            // إضافة التعليمات المخصصة للبرومبت
             if (customInstruction) {
                 systemPrompt += `\n\nتعليمات المستخدم الخاصة للأسلوب والنبرة: ${customInstruction}`;
             }
@@ -405,7 +407,6 @@
                 systemInstruction: { parts: [{ text: systemPrompt }] },
             };
 
-            // ... (بقية كود الاتصال بـ Gemini API يبقى كما هو) ...
             try {
                 let response;
                 let text = '';
@@ -464,7 +465,7 @@
 
 
         // ====================================================================
-        //  وظائف أداة الكلمات المفتاحية (جديد)
+        //  وظائف أداة الكلمات المفتاحية
         // ====================================================================
 
         // وظيفة عرض الكلمات المفتاحية
@@ -524,7 +525,7 @@
 
 
         // ====================================================================
-        //  وظيفة أداة جلب المقالات وإعادة الصياغة (Backend Placeholder)
+        //  وظيفة أداة جلب المقالات وإعادة الصياغة (Backend Proxy)
         // ====================================================================
 
         fetchAndRewriteBtn.addEventListener('click', async () => {
@@ -534,39 +535,38 @@
                 return;
             }
 
-            if (PROXY_API_URL === 'YOUR_BACKEND_PROXY_URL_HERE') {
-                paraphraseStatus.innerHTML = '<span class="text-red-600 font-bold">عذراً! لا يمكن تنفيذ هذه الميزة حالياً.</span> <br> يرجى إعداد خدمة الواجهة الخلفية (Backend Proxy) وتحديث قيمة المتغير `PROXY_API_URL` في الكود أولاً.';
+            if (!settings.geminiApiKey) {
+                paraphraseStatus.innerHTML = '<span class="text-red-600 font-bold">عذراً!</span> يرجى إدخال مفتاح Gemini API في شريط الإعدادات أولاً.';
                 return;
             }
-            
-            // *يجب هنا استبدال هذا الكود بالاتصال بخدمة الـ Backend Proxy الخاصة بك*
             
             paraphraseStatus.innerHTML = `<span class="text-indigo-600 flex items-center">
                 <svg class="animate-spin h-4 w-4 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                جاري جلب المحتوى وإعادة صياغته...
+                جاري جلب المحتوى وإعادة صياغته عبر خادم Vercel...
             </span>`;
             
-            // مثال وهمي لما سيحدث بعد الاتصال بالـ Backend:
             try {
-                // ... هنا سيكون الكود الذي يتصل بالـ Backend Proxy
+                // الاتصال بـ Backend Proxy على Vercel
                 const backendResponse = await fetch(PROXY_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url: articleUrl, apiKey: settings.geminiApiKey })
                 });
                 
+                const data = await backendResponse.json();
+
                 if (backendResponse.ok) {
-                    const data = await backendResponse.json();
                     
-                    // افتراض أن الـ Backend يعيد النص المُعاد صياغته
+                    // افتراض أن الـ Backend يعيد النص المُعاد صياغته في حقل rewrittenText
                     newsContentInput.value = data.rewrittenText || 'فشل في الحصول على النص المُعاد صياغته من الخادم.';
                     paraphraseStatus.innerHTML = '<span class="text-green-600 font-bold">تمت إعادة الصياغة بنجاح!</span> تم وضع المحتوى الجديد في مربع "المحتوى/الملخص".';
                     document.getElementById('content-editor').scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    throw new Error("خطأ في الاتصال بالواجهة الخلفية (Backend).");
+                    // عرض رسالة الخطأ القادمة من الواجهة الخلفية (Backend)
+                    throw new Error(data.error || "خطأ غير معروف في الاتصال بالواجهة الخلفية (Backend).");
                 }
                 
             } catch(e) {
@@ -576,7 +576,7 @@
         });
         
         // ====================================================================
-        //  وظيفة النشر إلى ووردبريس (WordPress Post) - لم يتم تعديلها
+        //  وظيفة النشر إلى ووردبريس (WordPress Post)
         // ====================================================================
         
         wordpressPostButton.addEventListener('click', async () => {
@@ -612,9 +612,9 @@
                                               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            جاري الإرسال...`;
+                                            جاري الترحيل...`;
             wordpressPostButton.disabled = true;
-            hideStatus();
+            hideStatus(); 
 
             try {
                 const response = await fetch(targetUrl, {
@@ -625,52 +625,49 @@
                     },
                     body: JSON.stringify(postData)
                 });
-
+                
                 if (response.ok) {
-                    const data = await response.json();
-                    const postLink = data.link;
-                    showStatus(
-                        'نجاح النشر', 
-                        `تم إرسال المسودة بنجاح! <a href="${postLink}" target="_blank" class="text-green-800 hover:text-green-900 font-bold underline">اضغط هنا لفتح المقال في لوحة تحكم ووردبريس.</a>`,
-                        'success'
-                    );
+                    const result = await response.json();
+                    const postLink = result.link;
+                    
+                    showStatus('تم بنجاح!', `تم ترحيل المقال كـ **مسودة** إلى ووردبريس. <a href="${postLink}" target="_blank" class="text-blue-700 underline font-bold hover:text-blue-500">مشاهدة المسودة</a>`, 'success');
+                    
+                    wordpressPostButton.innerHTML = 'تم الترحيل!';
+                    wordpressPostButton.classList.replace('bg-green-600', 'bg-blue-600');
+                    
                 } else {
-                    const errorData = await response.json().catch(() => ({})); 
-                    let errorMessageText = 'فشل في الاتصال بـ ووردبريس. تحقق من الرابط والإعدادات.';
+                    const errorData = await response.json();
+                    let msg = errorData.message || `خطأ HTTP: ${response.status}`;
 
-                    if (errorData.message) {
-                        errorMessageText = `خطأ API ووردبريس: **${errorData.message}**.`;
-                        
-                        if (errorData.code === 'rest_cannot_create') {
-                            errorMessageText += ' (الرجاء التأكد من أن المستخدم لديه إذن النشر/المسودة، وأن كلمة مرور التطبيق صحيحة).';
-                        } else if (errorData.code === 'rest_no_route') {
-                            errorMessageText = 'خطأ: لم يتم العثور على نقطة نهاية API. تحقق من أن رابط الموقع صحيح ولا يحتوي على أخطاء إملائية.';
-                        } else if (response.status === 401) {
-                            errorMessageText = 'خطأ في الأذونات: **بيانات الاعتماد غير صالحة**. تأكد من أن **كلمة مرور التطبيق** و **اسم المستخدم** صحيحان.';
-                        } else if (response.status === 404) {
-                            errorMessageText = 'خطأ 404: نقطة نهاية API غير موجودة. تأكد من أنك تستخدم رابط الموقع الصحيح (URL) وأنه لا يوجد إضافات تمنع الوصول إلى REST API.';
-                        } else {
-                            errorMessageText = `خطأ في الاتصال HTTP (الحالة: ${response.status}).`;
-                        }
-
-                    } else if (response.status === 401) {
-                        errorMessageText = 'خطأ في الأذونات: **بيانات الاعتماد غير صالحة**. تأكد من أن **كلمة مرور التطبيق** و **اسم المستخدم** صحيحان.';
-                    } else if (response.status === 403) {
-                        errorMessageText = 'خطأ 403: تم رفض الوصول. تأكد من إعدادات الحماية (مثل Sucuri أو جدار حماية) ومن أن المستخدم لديه إذن النشر.';
+                    if (response.status === 401) {
+                         msg = 'فشل المصادقة: تأكد من أن **اسم المستخدم** و **كلمة مرور التطبيق** صحيحان، ومن تفعيل إذن النشر.';
+                    } else if (response.status === 404) {
+                         msg = 'خطأ 404: تأكد من أن رابط الموقع صحيح وأن الـ API متاح (wp-json/wp/v2/posts).';
                     }
-
-                    showStatus('فشل النشر!', errorMessageText, 'error');
-                    console.error("WordPress API Error:", errorData);
+                    
+                    showStatus('فشل الترحيل!', msg, 'error');
                 }
+
             } catch (e) {
-                console.error("Fetch Error:", e);
-                showStatus('خطأ في الشبكة', 'فشل الاتصال: ربما يكون الرابط غير صحيح، أو هناك مشكلة في اتصال الشبكة/الإنترنت.', 'error');
+                console.error("Error posting to WordPress: ", e);
+                showStatus('فشل الترحيل!', 'حدث خطأ في الاتصال: تأكد من تشغيل الموقع وعدم وجود قيود CORS. ' + e.message, 'error');
             } finally {
                 wordpressPostButton.innerHTML = originalButtonText;
+                wordpressPostButton.classList.replace('bg-blue-600', 'bg-green-600');
                 wordpressPostButton.disabled = false;
             }
         });
         
+        // ====================================================================
+        //  وظيفة التشغيل عند تحميل الصفحة
+        // ====================================================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!settings.geminiApiKey) {
+                showStatus('تنبيه هام', 'الرجاء إدخال مفتاح Gemini API وحفظه في قسم **الإعدادات** لبدء استخدام المولد.', 'warning');
+            }
+        });
+
     </script>
 </body>
 </html>
