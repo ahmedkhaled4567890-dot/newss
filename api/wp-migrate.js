@@ -1,8 +1,7 @@
 // الملف: api/wp-migrate.js
 
 // هذا السطر يتطلب مكتبة node-fetch.
-import fetch from 'node-fetch'; 
-
+import fetch from 'node-fetch';
 export default async (req, res) => {
     // التأكد من أن الطلب هو POST
     if (req.method !== 'POST') {
